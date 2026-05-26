@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ROG Store Pro</title>
+  <!-- Cairo & Inter Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            rog: {
+              red: '#ff003c',
+              cyan: '#00f0ff',
+              purple: '#7b2cbf',
+              dark: '#06070a',
+              card: '#12131a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --rog-red: #ff003c;
+      --rog-cyan: #00f0ff;
+      --rog-purple: #7b2cbf;
+      --rog-dark: #06070a;
+    }
+    body {
+      background-color: var(--rog-dark);
+      color: #f3f4f6;
+      font-family: 'Cairo', 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    .glass {
+      background: rgba(18, 19, 26, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    @keyframes rgbMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .rgb-border {
+      position: relative;
+    }
+    .rgb-border::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: linear-gradient(45deg, var(--rog-red), var(--rog-purple), var(--rog-cyan), var(--rog-red));
+      background-size: 300% 300%;
+      animation: rgbMove 5s ease infinite;
+      border-radius: inherit;
+      z-index: -1;
+      pointer-events: none;
+    }
+    .rog-btn {
+      background: linear-gradient(90deg, #ff003c 0%, #7b2cbf 100%);
+      color: white;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(255, 0, 60, 0.2);
+    }
+    .rog-btn:hover {
+      box-shadow: 0 0 18px rgba(255, 0, 60, 0.5);
+      transform: translateY(-2px);
+    }
+    .page-enter {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Simple Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast {
+      background: rgba(18, 19, 26, 0.95);
+      border: 1px solid var(--rog-red);
+      box-shadow: 0 0 15px rgba(255, 0, 60, 0.3);
+      animation: toastIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+    }
+    @keyframes toastIn {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12 selection:bg-rog-red selection:text-white">
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="fixed inset-0 z-[10000] bg-black flex flex-col justify-center items-center transition-all duration-500">
+    <div class="relative w-24 h-24 mb-6 flex justify-center items-center">
+      <div class="absolute inset-0 rounded-full border-4 border-t-rog-red border-r-rog-purple border-b-rog-cyan border-l-transparent animate-spin"></div>
+      <svg class="w-12 h-12 text-rog-red active:text-white" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      </svg>
+    </div>
+    <div class="text-xl font-bold tracking-widest text-[#ff003c] font-sans">REPUBLIC OF GAMERS</div>
+    <div class="mt-2 text-xs text-gray-500 uppercase tracking-widest font-mono">IRAQ HQ / ROG STORE PRO</div>
+  </div>
+
+  <!-- Main Wrapper -->
+  <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"></div>
+
+  <!-- Floating Toast Receiver -->
+  <div id="toast-root" class="toast-container flex flex-col gap-2"></div>
+
+  <!-- Application Logic -->
+  <script>
+    // --- DICTIONARY ---
+    const LANG = {
+      ar: {
+        store: "المتجر",
+        cart: "السلة",
+        wishlist: "المفضلة",
+        compare: "المقارنة",
+        orders: "طلباتي",
+        support: "الدعم الفني",
+        about: "من نحن",
+        contact: "اتصل بنا",
+        blog: "مدونة ROG",
+        profile: "الحساب",
+        admin: "لوحة التحكم",
+        login: "تسجيل الدخول",
+        register: "إنشاء حساب",
+        logout: "تسجيل الخروج",
+        add_to_cart: "إضافة إلى السلة",
+        add_to_wishlist: "المفضلة",
+        add_to_compare: "مقارنة",
+        all: "الكل",
+        gpus: "كروت الشاشة",
+        cpus: "المعالجات",
+        others: "قطع أخرى",
+        price: "السعر",
+        brand: "الشركة",
+        category: "الفئة",
+        no_reviews: "لا توجد تقييمات بعد.",
+        add_your_review: "أضف مراجعة",
+        fullname: "الاسم الكامل",
+        phone: "رقم الهاتف",
+        address: "عنوان التوصيل (العراق)",
+        confirm_order: "تأكيد واستلام الطلب",
+        empty_cart: "سلتك فارغة",
+        checkout: "الدفع والشحن",
+        invoice: "الفاتورة الرسمية",
+        view_invoice: "عرض الفاتورة",
+        thanks_order: "شكراً لتسوقك! تم تسجيل طلبك بنجاح.",
+        empty_wishlist: "قائمة المفضلة فارغة حالياً.",
+        empty_compare: "لم تختر أي قطع للمقارنة (المقارنة بحد أقصى كرتين).",
+        empty_orders: "لا توجد طلبات سابقة.",
+        ticket_submitted: "تم تقديم تذكرة الدعم الفني بنجاح",
+        msg_sent: "تم إرسال رسالتك لفريق المبيعات بنجاح",
+        admin_dashboard: "الإحصائيات العامة",
+        total_revenue: "إجمالي المبيعات",
+        product_count: "عدد المنتجات",
+        order_count: "إجمالي الطلبات",
+        add_product: "إضافة منتج",
+        delete_product: "حذف",
+        edit_product: "تعديل",
+        change_status: "تحديث الحالة",
+        status_new: "جديد",
+        status_processing: "قيد المعالجة",
+        status_shipped: "تم الشحن",
+        status_completed: "تم التسليم",
+        review_success: "شكراً لك، تم نشر المراجعة بنجاح!",
+        fields_required: "يرجى ملء جميع الحقول المطلوبة!"
+      },
+      en: {
+        store: "Store",
+        cart: "Cart",
+        wishlist: "Wishlist",
+        compare: "Compare",
+        orders: "Orders",
+        support: "Support",
+        about: "About Us",
+        contact: "Contact",
+        blog: "Blog",
+        profile: "Profile",
+        admin: "Admin Staff",
+        login: "Log In",
+        register: "Register",
+        logout: "Log Out",
+        add_to_cart: "Add to Cart",
+        add_to_wishlist: "Wishlist",
+        add_to_compare: "Compare",
+        all: "All Hardware",
+        gpus: "Graphics Cards (GPUs)",
+        cpus: "Processors (CPUs)",
+        others: "Core Elements",
+        price: "Price",
+        brand: "Brand",
+        category: "Category",
+        no_reviews: "No client reviews yet.",
+        add_your_review: "Write a Review",
+        fullname: "Recipient Name",
+        phone: "Iraqi Phone Number",
+        address: "Detailed Street Address (Iraq)",
+        confirm_order: "Finalize & Secure Order",
+        empty_cart: "Your shopping cart is currently empty.",
+        checkout: "Checkout Shipping",
+        invoice: "Invoice Details",
+        view_invoice: "View Invoice",
+        thanks_order: "Thank you for supporting ROG Rebellion! Your order is logged.",
+        empty_wishlist: "Your wishlist is empty right now.",
+        empty_compare: "Add up to 2 items to benchmark specifications.",
+        empty_orders: "No prior orders logged.",
+        ticket_submitted: "Support Desk ticket transmitted successfully",
+        msg_sent: "Message transmitted successfully",
+        admin_dashboard: "Commander Analytics",
+        total_revenue: "Gross Sales Value",
+        product_count: "Configured Hardware Items",
+        order_count: "Total Orders Dispatched",
+        add_product: "Add Hardware",
+        delete_product: "Erase",
+        edit_product: "Modify",
+        change_status: "Change Status",
+        status_new: "New Entry",
+        status_processing: "Processing Order",
+        status_shipped: "Shipped Outer Domain",
+        status_completed: "Completed Cargo",
+        review_success: "Review registered successfully!",
+        fields_required: "Please correctly compile all required fields!"
+      },
+      ku: {
+        store: "فڕۆشگا",
+        cart: "سەبەتە",
+        wishlist: "دڵخوازەکان",
+        compare: "بەراورد",
+        orders: "داواکارییەكان",
+        support: "پشتیوانی",
+        about: "دەربارە",
+        contact: "پەیوەندی",
+        blog: "بلۆگی ROG",
+        profile: "پڕۆفایل",
+        admin: "بەڕێوەبەر",
+        login: "چوونەژوورەوە",
+        register: "تۆمارکردن",
+        logout: "چوونەدەرەوە",
+        add_to_cart: "زیاد بکە بۆ سەبەتە",
+        add_to_wishlist: "دڵخوازەکان",
+        add_to_compare: "بەراورد بکە",
+        all: "هەموو پارچەکان",
+        gpus: "کارتەکانی گرافیک",
+        cpus: "چارەسەرکەرەکان (CPUs)",
+        others: "پارچەی تر",
+        price: "نرخ",
+        brand: "کۆمپانیا",
+        category: "پۆل",
+        no_reviews: "هیچ پێداچوونەوەیەک نەنووسراوە.",
+        add_your_review: "زیادکردنی پێداچوونەوە",
+        fullname: "ناوی تەواو",
+        phone: "ژمارەی مۆبایل",
+        address: "ناونیشانی تەواو (عێراق)",
+        confirm_order: "پشتڕاستکردنەوەم داواکاری",
+        empty_cart: "سەبەتەکەت بەتاڵە مۆدیڕنە",
+        checkout: "کڕین و گواستنەوە",
+        invoice: "پسوولەی كڕین",
+        view_invoice: "بینینی پسوولە",
+        thanks_order: "سوپاس بۆ متمانەکەتان! داواکاری بە سەرکەوتوویی جێبەجێ کرا.",
+        empty_wishlist: "لیستی دڵخوازەکانت بەتاڵە.",
+        empty_compare: "هیچ پارچەیەک دیاری نەکراوە بۆ بەراوردکردن (یەک جار دەتوانیت دوو دانە بەراورد بکەیت).",
+        empty_orders: "داواکاری پێشوو نییە.",
+        ticket_submitted: "تیکتی پشتیوانی بە سەرکەوتوویی تۆمارکرا",
+        msg_sent: "پەیامەکەت بە سەرکەوتوویی گواسترایەوە",
+        admin_dashboard: "داشبۆردی بەڕێوەبەرایەتی",
+        total_revenue: "کۆی گشتی داهات",
+        product_count: "ژمارەی بەرهەمەکان",
+        order_count: "کۆی گشتی داواکارییەکان",
+        add_product: "زیادکردنی فڕۆش",
+        delete_product: "باشترکردن و پسان",
+        edit_product: "تعديل کران",
+        change_status: "دەستکاری دۆخی داهات",
+        status_new: "نوێ",
+        status_processing: "لە کارکردندایە",
+        status_shipped: "نێردرا بۆ گوند",
+        status_completed: "تەواوکرا",
+        review_success: "پێداچوونەوەکەت بە سەرکەوتوویی تۆمارکرا!",
+        fields_required: "تکایە هەموو خانە پێویستەکان پڕ بکەرەوە زانیاری!"
+      }
+    };
+
+    // --- DEFAULT PRODUCTS ---
+    const DEFAULT_PRODUCTS = [
+      {
+        id: "p1",
+        name: {
+          ar: "كارت شاشة ROG Strix RTX 409OC",
+          en: "ASUS ROG Strix GeForce RTX 409OC Edition",
+          ku: "کارت گرافیکی ROG Strix RTX 409OC"
+        },
+        desc: {
+          ar: "الكرت الأقوى لتشغيل الألعاب بدقة 4K مع تقنية تتبع الأشعة والذكاء الاصطناعي الفائق DLSS 3.",
+          en: "The ultimate weapon for pure 4K ultra-raytraced gameplay, fueled by NVIDIA DLSS 3 artificial intelligence.",
+          ku: "بەهێزترین گرافیک کارت بۆ بەکارخستنی یارییەکان بە ڕوونی 4K بە بەکارهێنانی تەکنەلۆژیای تیشک."
+        },
+        price: 3250000,
+        category: "gpu",
+        brand: "ASUS ROG",
+        image: "gpu",
+        reviews: [
+          { user: "Ali Ahmed", text: "Amazing performance, run Cyberpunk at 120FPS maxed out!", stars: 5, date: "2026-05-20" }
+        ]
+      },
+      {
+        id: "p2",
+        name: {
+          ar: "معالج Intel Core i9-14900K",
+          en: "Intel Core i9-14900K Processor",
+          ku: "پڕۆسیسەری Intel Core i9-14900K"
+        },
+        desc: {
+          ar: "معالج خارق بـ 24 نواة لتنفيذ أثقل المهام والبرامج والألعاب بسلاسة مطلقة وتردد يصل إلى 6.0 جيجاهرتز.",
+          en: "Titan-level 24-core processing power designed to crunch heavy workloads at peak turbo speeds of up to 6.0 GHz.",
+          ku: "چارەسەرکەرێکی بەهێز بە ٢٤ ناوک بۆ چاره‌سه‌ركردنی كاره‌ هه‌ره‌ قورسه‌كان سڵاسە."
+        },
+        price: 850000,
+        category: "cpu",
+        brand: "Intel",
+        image: "cpu",
+        reviews: []
+      },
+      {
+        id: "p3",
+        name: {
+          ar: "معالج AMD Ryzen 9 7950X3D",
+          en: "AMD Ryzen 9 7950X3D Processor",
+          ku: "پڕۆسیسەری AMD Ryzen 9 7950X3D"
+        },
+        desc: {
+          ar: "ملك المعالجات الموجهة للألعاب بفضل تقنية الذاكرة المخبأة ثلاثية الأبعاد 3D V-Cache المبتكرة.",
+          en: "Gaming performance royalty. Outclass limits utilizing specialized revolutionary 3D V-Cache architecture.",
+          ku: "پادشای پڕۆسیسەرەکانی یاری بەهۆی تەکنەلۆژیای نوێی بیرگەی ٣D مۆدیڕنە."
+        },
+        price: 920000,
+        category: "cpu",
+        brand: "AMD",
+        image: "cpu",
+        reviews: []
+      },
+      {
+        id: "p4",
+        name: {
+          ar: "مبرد مائي ROG Ryujin III 360",
+          en: "ROG Ryujin III 360 ARGB Liquid Cooler",
+          ku: "مبەردی مایی ROG Ryujin III 360"
+        },
+        desc: {
+          ar: "مبرد مائي متكامل للمنصات الفائقة مع شاشة LCD كاملة لعرض درجات الحرارة والأنيميشن الاحترافي.",
+          en: "Premium AIO cooling solution featuring customizable active LCD digital hub and vibrant ARGB fan arrays.",
+          ku: "مبەردی مایی بەهێز بە شاشەی LCD تایبەت بێگومان."
+        },
+        price: 480000,
+        category: "other",
+        brand: "ASUS ROG",
+        image: "cooler",
+        reviews: []
+      },
+      {
+        id: "p5",
+        name: {
+          ar: "لوحة أم ROG Strix Z790-E Gaming II",
+          en: "ROG Strix Z790-E Gaming WiFi II Motherboard",
+          ku: "لۆحەی دایکی ROG Strix Z790-E"
+        },
+        desc: {
+          ar: "مذربورد متطورة تدعم الجيل الرابع عشر وذاكرة DDR5 ومنافذ PCIe 5.0 فائقة السرعة مع كارت واي فاي 7.",
+          en: "Advanced high-tier platform built for 14th Gen Intel processors, performance DDR5 limits, and futuristic Wi-Fi 7.",
+          ku: "بۆردێکی زۆر پێشکەوتوو بە پاڵپشتی نەوەی تازەی پڕۆسیسەر و وای فای ٧."
+        },
+        price: 650000,
+        category: "other",
+        brand: "ASUS ROG",
+        image: "motherboard",
+        reviews: []
+      }
+    ];
+
+    // --- BLOG POSTS ---
+    const BLOG_POSTS = [
+      {
+        id: 1,
+        title: "RTX 5090 RTX & The Future in Iraq",
+        content: "We outline the initial reports about NVIDIA's next generation architecture arriving in late 2026. The thermal profile and extreme memory bandwidth targets are discussed for Iraqi high-end system power envelopes.",
+        date: "2026-05-22"
+      },
+      {
+        id: 2,
+        title: "Optimizing AMD 3D V-Cache on Windows 11",
+        content: "Step-by-step optimization manual targeting Ryzen X3D systems. Explaining core scheduling priorities for direct gaming latencies under intense multicore loads.",
+        date: "2026-05-18"
+      }
+    ];
+
+    // --- APP CORE STATE ---
+    const state = {
+      currentPage: "store",
+      currentLang: localStorage.getItem("rog_lang") || "ar",
+      user: JSON.parse(localStorage.getItem("rog_user_pro")) || null,
+      cart: JSON.parse(localStorage.getItem("rog_cart")) || [],
+      adminLogged: localStorage.getItem("rog_admin_logged") === "true",
+      adminSection: "dashboard",
+      searchQuery: "",
+      selectedCategory: "all",
+      activeProductId: null,
+      activeInvoiceId: null,
+      products: JSON.parse(localStorage.getItem("rog_custom_products")) || DEFAULT_PRODUCTS
+    };
+
+    // --- UTILITIES ---
+    function t(key) {
+      return (LANG[state.currentLang] && LANG[state.currentLang][key]) || key;
+    }
+
+    function setLang(lang) {
+      state.currentLang = lang;
+      localStorage.setItem("rog_lang", lang);
+      updateRtlDirection();
+      render();
+    }
+
+    function updateRtlDirection() {
+      const isRtl = state.currentLang === "ar" || state.currentLang === "ku";
+      document.documentElement.dir = isRtl ? "rtl" : "ltr";
+      document.documentElement.lang = state.currentLang;
+    }
+
+    function showToast(message) {
+      const root = document.getElementById("toast-root");
+      const div = document.createElement("div");
+      div.className = "toast p-4 rounded-xl glass text-sm shadow-xl flex items-center gap-3 backdrop-blur-md";
+      div.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-rog-red animate-pulse"></span>
+        <span class="font-semibold text-white tracking-wide">${message}</span>
+      `;
+      root.appendChild(div);
+      setTimeout(() => {
+        div.classList.add("hide");
+        setTimeout(() => div.remove(), 300);
+      }, 2500);
+    }
+
+    function formatIQD(amount) {
+      return amount.toLocaleString("ar-IQ") + " د.ع";
+    }
+
+    // --- PERSISTENCE WRAPPERS ---
+    function saveUser() {
+      localStorage.setItem("rog_user_pro", JSON.stringify(state.user));
+    }
+
+    function saveCart() {
+      localStorage.setItem("rog_cart", JSON.stringify(state.cart));
+    }
+
+    function saveAdminState() {
+      localStorage.setItem("rog_admin_logged", state.adminLogged);
+    }
+
+    function saveProducts() {
+      localStorage.setItem("rog_custom_products", JSON.stringify(state.products));
+    }
+
+    // --- ROUTING / AUTH GUARD ---
+    function navigate(page) {
+      state.currentPage = page;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      render();
+    }
+
+    function requireAuth(page) {
+      if (!state.user) {
+        showToast(t("log_in_first"));
+        navigate("login");
+        return false;
+      }
+      navigate(page);
+      return true;
+    }
+
+    // --- DRAW PREMIUM HARDWARE PROCEDURAL GRAPHICS ---
+    function drawHardwareSVG(imageType) {
+      const cls = "w-full h-48 object-cover rounded-t-xl bg-gradient-to-br from-rog-card to-black relative flex items-center justify-center p-6 border-b border-white/[0.05] overflow-hidden group";
+      
+      let contents = "";
+      if (imageType === "gpu") {
+        contents = `
+          <!-- Circuit Grid Background -->
+          <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
+          <div class="absolute inset-0 bg-gradient-to-tr from-rog-red/10 via-transparent to-rog-cyan/10"></div>
+          <!-- GPU Shroud -->
+          <div class="relative w-44 h-24 bg-[#1e1f29] rounded-lg border border-gray-700 shadow-2xl flex items-center justify-around px-2">
+            <!-- Sleek RGB Stripe -->
+            <div class="absolute top-2 left-0 right-0 h-[2px] bg-gradient-to-r from-rog-red via-rog-purple to-rog-cyan"></div>
+            <!-- Triple Fans -->
+            <div class="w-10 h-10 rounded-full bg-[#111216] border border-red-500/40 flex items-center justify-center relative shadow-inner">
+              <div class="w-8 h-8 rounded-full border border-dashed border-red-500 animate-spin" style="animation-duration: 4s;"></div>
+              <div class="absolute w-2 h-2 rounded-full bg-rog-red shadow-lg shadow-rog-red/80"></div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-[#111216] border border-gray-600 flex items-center justify-center relative shadow-inner">
+              <div class="w-8 h-8 rounded-full border border-dashed border-gray-500 animate-spin" style="animation-duration: 3s;"></div>
+              <div class="absolute w-2 h-2 rounded-full bg-rog-purple shadow-lg shadow-rog-purple/80"></div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-[#111216] border border-cyan-500/40 flex items-center justify-center relative shadow-inner">
+              <div class="w-8 h-8 rounded-full border border-dashed border-cyan-500 animate-spin" style="animation-duration: 4s;"></div>
+              <div class="absolute w-2 h-2 rounded-full bg-rog-cyan shadow-lg shadow-rog-cyan/80"></div>
+            </div>
+            <!-- PCIE Interface Gold Pins -->
+            <div class="absolute bottom-[-4px] left-6 right-6 h-[4px] bg-yellow-500 rounded-b"></div>
+          </div>
+        `;
+      } else if (imageType === "cpu") {
+        contents = `
+          <div class="absolute inset-0 bg-gradient-to-br from-rog-purple/10 to-transparent"></div>
+          <!-- Integrated Heat Spreader -->
+          <div class="relative w-28 h-28 bg-gradient-to-b from-gray-300 to-gray-500 rounded-md border border-gray-100 flex flex-col items-center justify-center p-3 shadow-2xl">
+            <!-- Engraved ROG Branding -->
+            <div class="text-[9px] font-sans font-extrabold text-slate-800 tracking-wider">ROG TITAN</div>
+            <div class="w-12 h-12 my-1 border border-black/20 rounded flex items-center justify-center relative bg-gray-400/40">
+              <div class="w-6 h-6 rounded-full border-2 border-rog-purple border-t-transparent animate-spin" style="animation-duration: 2s"></div>
+            </div>
+            <span class="text-[7px] font-mono font-bold text-slate-900 tracking-tight">K-SERIES UNLOCKED</span>
+            <!-- Edge Substrate Plate -->
+            <div class="absolute -inset-1 border border-green-800 rounded-lg -z-10 bg-green-900/40"></div>
+          </div>
+        `;
+      } else if (imageType === "cooler") {
+        contents = `
+          <div class="absolute inset-0 bg-gradient-to-tr from-rog-red/10 via-transparent to-[#7b2cbf]/20"></div>
+          <!-- Water Block Head with Screen -->
+          <div class="relative w-24 h-24 bg-[#111218] rounded-full border-4 border-rog-card flex items-center justify-center shadow-2xl overflow-hidden glass">
+            <!-- Interactive Neon Halo ring -->
+            <div class="absolute inset-1 rounded-full border border-rog-red animate-ping opacity-60"></div>
+            <!-- High Tech Circular RGB Border -->
+            <div class="absolute inset-2 rounded-full border-2 border-dashed border-rog-cyan animate-spin" style="animation-duration: 10s"></div>
+            <!-- Core LCD Indicator -->
+            <div class="text-center font-mono z-10">
+              <span class="block text-[14px] font-bold text-rog-red">36°C</span>
+              <span class="block text-[7px] text-gray-400 tracking-widest leading-none">AIO ACTIVE</span>
+            </div>
+          </div>
+          <!-- Outgoing braided hoses -->
+          <div class="absolute bottom-4 right-0 w-20 h-6 border-b-4 border-dashed border-gray-600 transform rotate-12"></div>
+        `;
+      } else if (imageType === "motherboard") {
+        contents = `
+          <div class="absolute inset-0 bg-gradient-to-bl from-rog-cyan/10 to-transparent"></div>
+          <!-- Black Silicon Grid PCB -->
+          <div class="relative w-40 h-36 bg-[#0e0f14] rounded border border-white/[0.05] p-2 flex flex-col justify-between shadow-2xl">
+            <!-- CPU Socket Shield -->
+            <div class="w-12 h-12 bg-zinc-800 border-2 border-zinc-700 rounded p-1">
+              <div class="w-full h-full bg-zinc-900 border border-zinc-600 flex items-center justify-center text-[7px] font-mono text-zinc-500">LGA 1700</div>
+            </div>
+            <!-- VRM Heatsink RGB block -->
+            <div class="absolute top-1 right-2 w-20 h-5 bg-gradient-to-r from-rog-red to-rog-purple rounded-sm flex items-center px-1">
+              <span class="text-[6px] font-bold text-white tracking-wider font-sans">STRIX RGB ZONE</span>
+            </div>
+            <!-- RAM Slots -->
+            <div class="absolute top-8 right-3 flex gap-[3px] h-16">
+              <div class="w-[3px] bg-zinc-700 rounded-t"></div>
+              <div class="w-[3px] bg-cyan-400 rounded-t"></div>
+              <div class="w-[3px] bg-zinc-700 rounded-t"></div>
+              <div class="w-[3px] bg-cyan-400 rounded-t"></div>
+            </div>
+            <!-- PCIE SafeSlot with Metallic Accent -->
+            <div class="w-32 h-[5px] bg-zinc-600 border border-zinc-400 rounded-sm relative">
+              <span class="absolute right-0 top-[-2px] text-[4px] text-white">GEN 5</span>
+            </div>
+          </div>
+        `;
+      } else {
+        contents = `
+          <!-- Unknown custom SVG or default representation -->
+          <div class="absolute inset-0 bg-gradient-to-br from-rog-purple/20 via-transparent to-rog-cyan/20"></div>
+          <svg class="w-16 h-16 text-gray-500 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        `;
+      }
+      return `<div class="${cls}">${contents}</div>`;
+    }
+
+    // --- CART LOGIC ---
+    function addToCart(productId) {
+      const existing = state.cart.find(item => item.id === productId);
+      if (existing) {
+        existing.qty++;
+      } else {
+        state.cart.push({ id: productId, qty: 1 });
+      }
+      saveCart();
+      showToast(t("add_cart_success"));
+      render();
+    }
+
+    function removeFromCart(productId) {
+      state.cart = state.cart.filter(item => item.id !== productId);
+      saveCart();
+      showToast(t("item_removed_cart"));
+      render();
+    }
+
+    function updateQty(productId, newQty) {
+      const item = state.cart.find(i => i.id === productId);
+      if (item) {
+        item.qty = Math.max(1, newQty);
+        saveCart();
+        render();
+      }
+    }
+
+    function cartTotal() {
+      return state.cart.reduce((sum, item) => {
+        const prod = state.products.find(p => p.id === item.id);
+        return sum + (prod ? prod.price * item.qty : 0);
+      }, 0);
+    }
+
+    // --- WISHLIST LOGIC ---
+    function toggleWishlist(productId) {
+      if (!state.user) {
+        showToast(t("log_in_first"));
+        navigate("login");
+        return;
+      }
+      if (!state.user.wishlist) state.user.wishlist = [];
+      const index = state.user.wishlist.indexOf(productId);
+      if (index > -1) {
+        state.user.wishlist.splice(index, 1);
+        showToast(t("remove_wishlist_success"));
+      } else {
+        state.user.wishlist.push(productId);
+        showToast(t("add_wishlist_success"));
+      }
+      saveUser();
+      render();
+    }
+
+    // --- COMPARE LOGIC (MAX 2 ITEMS) ---
+    function toggleCompare(productId) {
+      if (!state.user) {
+        showToast(t("log_in_first"));
+        navigate("login");
+        return;
+      }
+      if (!state.user.compare) state.user.compare = [];
+      const index = state.user.compare.indexOf(productId);
+      if (index > -1) {
+        state.user.compare.splice(index, 1);
+        render();
+      } else {
+        if (state.user.compare.length >= 2) {
+          showToast(t("compare_limit"));
+          return;
+        }
+        state.user.compare.push(productId);
+        showToast(t("add_compare_success"));
+      }
+      saveUser();
+      render();
+    }
+
+    // --- REVIEW LOGIC ---
+    function addReview(productId, text, stars) {
+      if (!state.user) {
+        showToast(t("log_in_first"));
+        return;
+      }
+      if (!text.trim()) {
+        showToast(t("fields_required"));
+        return;
+      }
+      const prod = state.products.find(p => p.id === productId);
+      if (prod) {
+        if (!prod.reviews) prod.reviews = [];
+        prod.reviews.push({
+          user: state.user.name,
+          text: text,
+          stars: parseInt(stars) || 5,
+          date: new Date().toISOString().split("T")[0]
+        });
+        saveProducts();
+        showToast(t("review_success"));
+        render();
+      }
+    }
+
+    // --- MAIN RENDER DISPATCHER ---
+    function render() {
+      const container = document.getElementById("app");
+      
+      // Clear container and render dynamic pieces
+      container.innerHTML = `
+        ${renderHeader()}
+        <main class="py-6 page-enter">
+          ${renderRoute()}
+        </main>
+        ${renderFooter()}
+      `;
+      
+      // Trigger SVG rendering or vector icons reload via Lucide
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // --- HEADER COMPONENT ---
+    function renderHeader() {
+      const cartCount = state.cart.reduce((sum, item) => sum + item.qty, 0);
+      const isRtl = state.currentLang === "ar" || state.currentLang === "ku";
+      
+      return `
+        <header class="glass rounded-2xl p-4 mt-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <!-- Logo & Brand Header -->
+          <div class="flex items-center gap-3 cursor-pointer" onclick="navigate('store')">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rog-red to-rog-purple flex items-center justify-center shadow-lg shadow-rog-red/40">
+              <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-rog-red to-rog-cyan bg-clip-text text-transparent italic">ROG STORE PRO</span>
+              <span class="block text-[8px] uppercase tracking-widest text-[#00f0ff] font-mono leading-none">Republic Of Gamers Iraq</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Navigation Links -->
+          <nav class="flex flex-wrap justify-center items-center gap-3">
+            <button onclick="navigate('store')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${state.currentPage === 'store' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-store">
+              ${t('store')}
+            </button>
+            <button onclick="navigate('cart')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${state.currentPage === 'cart' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-cart">
+              <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+              ${t('cart')}
+              ${cartCount > 0 ? `<span class="bg-rog-red text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1">${cartCount}</span>` : ''}
+            </button>
+            <button onclick="requireAuth('wishlist')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${state.currentPage === 'wishlist' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-wishlist">
+              ${t('wishlist')}
+            </button>
+            <button onclick="requireAuth('compare')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${state.currentPage === 'compare' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-compare">
+              ${t('compare')}
+            </button>
+            <button onclick="requireAuth('orders')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${state.currentPage === 'orders' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-orders">
+              ${t('orders')}
+            </button>
+            <button onclick="navigate('blog')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${state.currentPage === 'blog' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-blog">
+              ${t('blog')}
+            </button>
+            <button onclick="navigate('about')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${state.currentPage === 'about' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-about">
+              ${t('about')}
+            </button>
+            <button onclick="navigate('contact')" class="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${state.currentPage === 'contact' ? 'text-rog-red bg-white/[0.05]' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}" id="nav-btn-contact">
+              ${t('contact')}
+            </button>
+            <button onclick="triggerAdmin()" class="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#00f0ff] border border-cyan-500/20 hover:bg-[#00f0ff]/10 hover:border-cyan-500/50 transition-all ml-2" id="nav-btn-admin">
+              ${t('admin')}
+            </button>
+          </nav>
+
+          <!-- Core Language Panel & Profile -->
+          <div class="flex items-center gap-3">
+            <div class="flex bg-black/40 rounded-xl p-0.5 border border-white/[0.05]">
+              <button onclick="setLang('ar')" class="px-2 py-1 text-xs rounded-lg font-bold transition-all ${state.currentLang === 'ar' ? 'bg-rog-red text-white' : 'text-gray-400 hover:text-white'}">AR</button>
+              <button onclick="setLang('en')" class="px-2 py-1 text-xs rounded-lg font-bold transition-all ${state.currentLang === 'en' ? 'bg-rog-red text-white' : 'text-gray-400 hover:text-white'}">EN</button>
+              <button onclick="setLang('ku')" class="px-2 py-1 text-xs rounded-lg font-bold transition-all ${state.currentLang === 'ku' ? 'bg-rog-red text-white' : 'text-gray-400 hover:text-white'}">KU</button>
+            </div>
+
+            <!-- Authentic User Profiles Block -->
+            ${state.user ? `
+              <div class="flex items-center gap-2 border-l border-white/[0.1] pl-3">
+                <span class="text-xs font-bold text-gray-300 hidden md:block">${state.user.name}</span>
+                <button onclick="logout()" class="p-2 text-gray-500 hover:text-rog-red" title="${t('logout')}">
+                  <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+              </div>
+            ` : `
+              <button onclick="navigate('login')" class="rog-btn px-4 py-1.5 rounded-xl text-xs flex items-center gap-1">
+                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                ${t('login')}
+              </button>
+            `}
+          </div>
+        </header>
+      `;
+    }
+
+    // --- FOOTER COMPONENT ---
+    function renderFooter() {
+      return `
+        <footer class="mt-12 text-center text-xs text-gray-500 border-t border-white/[0.05] pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p>© 2026 ROG STORES PRO INC. SYSTEM SECURITY REGISTERED VIA CHROME SANDBOX. ALL RIGHTS RESERVED.</p>
+          <div class="flex gap-4">
+            <a onclick="navigate('about')" class="hover:text-rog-red cursor-pointer">Republic Rebellion</a>
+            <span>•</span>
+            <a onclick="navigate('contact')" class="hover:text-rog-red cursor-pointer">Official Service Center</a>
+          </div>
+        </footer>
+      `;
+    }
+
+    // --- RE-ROUTING ENGINE ---
+    function renderRoute() {
+      if (state.currentPage === "store") return renderStore();
+      if (state.currentPage === "cart") return renderCart();
+      if (state.currentPage === "login") return renderLogin();
+      if (state.currentPage === "register") return renderRegister();
+      if (state.currentPage === "wishlist") return renderWishlist();
+      if (state.currentPage === "compare") return renderCompare();
+      if (state.currentPage === "about") return renderAbout();
+      if (state.currentPage === "contact") return renderContact();
+      if (state.currentPage === "blog") return renderBlog();
+      if (state.currentPage === "support") return renderSupport();
+      if (state.currentPage === "checkout") return renderCheckout();
+      if (state.currentPage === "orders") return renderOrders();
+      if (state.currentPage === "admin") return renderAdmin();
+      
+      if (state.currentPage.startsWith("product-")) {
+        const id = state.currentPage.split("-")[1];
+        return renderProductPage(id);
+      }
+      if (state.currentPage.startsWith("invoice-")) {
+        const id = state.currentPage.split("-")[1];
+        return renderInvoice(id);
+      }
+      return renderStore();
+    }
+
+    // --- STORE PAGE ---
+    function renderStore() {
+      const filtered = state.products.filter(p => {
+        const matchesCategory = state.selectedCategory === "all" || p.category === state.selectedCategory;
+        const matchesSearch = p.name[state.currentLang].toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+                              p.brand.toLowerCase().includes(state.searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+
+      return `
+        <!-- Hero Section Banner -->
+        <div class="relative rounded-3xl overflow-hidden mb-8 h-64 flex flex-col justify-center items-start px-8 sm:px-12 bg-gradient-to-r from-rog-card via-black to-transparent border border-white/[0.05]">
+          <div class="absolute inset-0 bg-cover bg-center z-[-1] opacity-35" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000');"></div>
+          <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-rog-dark to-transparent"></div>
+          <span class="bg-rog-red text-white text-[10px] uppercase font-bold px-3 py-1 rounded-full mb-3 tracking-widest">IRAQ OFFICIAL STOCK</span>
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight italic">JOIN THE ROG REBELLION</h1>
+          <p class="text-sm text-gray-400 mt-2 max-w-md">${t('about_desc')}</p>
+        </div>
+
+        <!-- Toolbar: Filters + Search -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+          <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            ${['all', 'gpu', 'cpu', 'other'].map(cat => `
+              <button onclick="setCategory('${cat}')" class="px-4 py-2 text-xs rounded-xl font-bold transition-all ${state.selectedCategory === cat ? 'bg-rog-red text-white shadow-lg shadow-rog-red/30' : 'bg-rog-card text-gray-400 hover:text-white border border-white/[0.05]'}" id="category-btn-${cat}">
+                ${t(cat === 'all' ? 'all' : (cat === 'gpu' ? 'gpus' : (cat === 'cpu' ? 'cpus' : 'others')))}
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Dynamic Search Input -->
+          <div class="relative w-full md:w-80">
+            <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </span>
+            <input type="text" value="${state.searchQuery}" oninput="state.searchQuery = this.value; render();" placeholder="${t('search_placeholder')}" class="w-full glass py-2.5 pl-10 pr-4 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red transition-all" id="store-search-input" />
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="product-grid">
+          ${filtered.map(p => {
+            const isWish = state.user && state.user.wishlist && state.user.wishlist.includes(p.id);
+            const isComp = state.user && state.user.compare && state.user.compare.includes(p.id);
+            return `
+              <div class="glass rounded-2xl flex flex-col justify-between overflow-hidden border border-white/[0.05] hover:border-rog-red/40 transition-all duration-300 group hover:-translate-y-1">
+                <div class="relative cursor-pointer" onclick="navigate('product-${p.id}')">
+                  ${drawHardwareSVG(p.image)}
+                  <span class="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-rog-cyan text-[10px] font-mono px-2 py-0.5 rounded-full border border-rog-cyan/20">${p.brand}</span>
+                </div>
+                <div class="p-4 flex flex-col flex-grow">
+                  <h3 class="text-sm font-bold text-white hover:text-rog-red transition-colors mb-2 cursor-pointer line-clamp-1" onclick="navigate('product-${p.id}')">${p.name[state.currentLang]}</h3>
+                  <p class="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-4 flex-grow">${p.desc[state.currentLang]}</p>
+                  
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-mono font-bold text-[#ff003c]">${formatIQD(p.price)}</span>
+                    <div class="flex items-center gap-1.5">
+                      <button onclick="toggleWishlist('${p.id}')" class="p-1.5 rounded-lg border transition-all ${isWish ? 'border-rog-red/50 text-rog-red bg-rog-red/10' : 'border-white/[0.08] text-gray-500 hover:text-white'}" title="${t('wishlist')}">
+                        <i data-lucide="heart" class="w-3.5 h-3.5 ${isWish ? 'fill-current' : ''}"></i>
+                      </button>
+                      <button onclick="toggleCompare('${p.id}')" class="p-1.5 rounded-lg border transition-all ${isComp ? 'border-rog-cyan/50 text-rog-cyan bg-rog-cyan/10' : 'border-white/[0.08] text-gray-500 hover:text-white'}" title="${t('compare')}">
+                        <i data-lucide="git-compare" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <button onclick="addToCart('${p.id}')" class="rog-btn w-full py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 font-bold uppercase tracking-wider" id="add-to-cart-btn-${p.id}">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    ${t('add_to_cart')}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function setCategory(cat) {
+      state.selectedCategory = cat;
+      render();
+    }
+
+    // --- PRODUCT DETAILS PAGE & REVIEWS ---
+    function renderProductPage(id) {
+      const p = state.products.find(item => item.id === id);
+      if (!p) return `<div class="p-8 text-center text-gray-500">Hardware not found.</div>`;
+
+      const isWish = state.user && state.user.wishlist && state.user.wishlist.includes(p.id);
+      const isComp = state.user && state.user.compare && state.user.compare.includes(p.id);
+      const reviews = p.reviews || [];
+
+      return `
+        <div class="flex flex-col lg:flex-row gap-8">
+          <!-- Left Column Asset display -->
+          <div class="w-full lg:w-1/2 glass rounded-3xl p-6 flex flex-col justify-center items-center border border-white/[0.05] relative overflow-hidden group">
+            <div class="absolute inset-0 bg-radial from-rog-red/5 to-transparent"></div>
+            ${drawHardwareSVG(p.image)}
+            <div class="mt-4 flex gap-4 text-xs font-mono text-gray-500">
+              <span>BRAND: ${p.brand}</span>
+              <span>•</span>
+              <span>CLASSIFICATION: ${p.category.toUpperCase()}</span>
+            </div>
+          </div>
+
+          <!-- Right Column Metadata panel -->
+          <div class="w-full lg:w-1/2 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="bg-rog-red/10 border border-rog-red/30 text-rog-red text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">${p.brand}</span>
+                <span class="text-xs text-gray-500 font-mono">ID: ${p.id}</span>
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-extrabold text-white mb-4 italic leading-tight">${p.name[state.currentLang]}</h1>
+              <p class="text-sm text-gray-400 leading-relaxed mb-6">${p.desc[state.currentLang]}</p>
+              
+              <div class="border-y border-white/[0.08] py-4 mb-6">
+                <span class="text-xs text-gray-500 block mb-1 uppercase tracking-wider font-mono">${t('price')}</span>
+                <span class="text-2xl font-mono font-bold text-white tracking-tight">${formatIQD(p.price)}</span>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <button onclick="addToCart('${p.id}')" class="rog-btn w-full py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 uppercase tracking-wide font-extrabold" id="product-page-add-cart-btn">
+                <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                ${t('add_to_cart')}
+              </button>
+              
+              <div class="grid grid-cols-2 gap-3">
+                <button onclick="toggleWishlist('${p.id}')" class="py-2.5 rounded-xl border border-white/[0.1] hover:border-rog-red/50 hover:bg-rog-red/5 text-xs text-gray-300 font-bold flex items-center justify-center gap-2 transition-all">
+                  <i data-lucide="heart" class="w-4 h-4 ${isWish ? 'text-rog-red fill-current' : ''}"></i>
+                  ${t('add_to_wishlist')}
+                </button>
+                <button onclick="toggleCompare('${p.id}')" class="py-2.5 rounded-xl border border-white/[0.1] hover:border-rog-cyan/50 hover:bg-rog-cyan/5 text-xs text-gray-300 font-bold flex items-center justify-center gap-2 transition-all">
+                  <i data-lucide="git-compare" class="w-4 h-4 ${isComp ? 'text-rog-cyan' : ''}"></i>
+                  ${t('add_to_compare')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REVIEWS PIPELINE -->
+        <div class="mt-12">
+          <h2 class="text-lg font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
+            <i data-lucide="star" class="w-5 h-5 text-yellow-500 fill-current"></i>
+            ${t('reviews')} (${reviews.length})
+          </h2>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Review List -->
+            <div class="lg:col-span-2 space-y-4">
+              ${reviews.length === 0 ? `
+                <div class="p-6 text-center text-gray-500 border border-dashed border-white/[0.08] rounded-2xl">${t('no_reviews')}</div>
+              ` : reviews.map(r => `
+                <div class="glass p-4 rounded-xl border border-white/[0.05]">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-sm text-white">${r.user}</span>
+                    <span class="text-[10px] font-mono text-gray-500">${r.date}</span>
+                  </div>
+                  <div class="flex gap-1 mb-2">
+                    ${Array.from({ length: 5 }).map((_, i) => `
+                      <i data-lucide="star" class="w-3.5 h-3.5 ${i < r.stars ? 'text-yellow-500 fill-current' : 'text-gray-600'}"></i>
+                    `).join('')}
+                  </div>
+                  <p class="text-xs text-gray-400 leading-relaxed">${r.text}</p>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Write Review Form -->
+            <div>
+              ${state.user ? `
+                <div class="glass p-6 rounded-2xl border border-white/[0.05] relative">
+                  <div class="absolute -top-3 left-4 bg-rog-red text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">SUBMIT RATING</div>
+                  <h3 class="text-sm font-bold text-white mb-4 mt-2">${t('add_your_review')}</h3>
+                  
+                  <div class="mb-4">
+                    <label class="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">${t('rating')}</label>
+                    <select id="review-stars-select" class="w-full glass py-2 px-3 rounded-lg text-xs text-white focus:outline-none focus:border-rog-red">
+                      <option value="5" select>⭐⭐⭐⭐⭐ (5/5)</option>
+                      <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                      <option value="3">⭐⭐⭐ (3/5)</option>
+                      <option value="2">⭐⭐ (2/5)</option>
+                      <option value="1">⭐ (1/5)</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-4">
+                    <textarea id="review-text-textarea" placeholder="${t('review_text')}" rows="4" class="w-full glass p-3 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-rog-red"></textarea>
+                  </div>
+
+                  <button onclick="submitReviewAction('${p.id}')" class="rog-btn w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider" id="submit-review-action">
+                    ${t('submit_review')}
+                  </button>
+                </div>
+              ` : `
+                <div class="p-4 border border-dashed border-white/[0.08] rounded-2xl text-center text-xs text-gray-500">
+                  <a onclick="navigate('login')" class="text-rog-red underline font-bold cursor-pointer">Log In</a> to publish standard reviews.
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function submitReviewAction(productId) {
+      const select = document.getElementById("review-stars-select");
+      const textarea = document.getElementById("review-text-textarea");
+      if (select && textarea) {
+        addReview(productId, textarea.value, select.value);
+      }
+    }
+
+    // --- SHOPPING CART COMPONENT ---
+    function renderCart() {
+      if (state.cart.length === 0) {
+        return `
+          <div class="p-12 text-center text-gray-500 max-w-md mx-auto flex flex-col items-center">
+            <i data-lucide="shopping-bag" class="w-16 h-16 text-rog-red/30 mb-4 animate-bounce"></i>
+            <h2 class="text-lg font-bold text-white mb-2">${t('empty_cart')}</h2>
+            <button onclick="navigate('store')" class="rog-btn px-6 py-2.5 rounded-xl text-xs font-bold uppercase mt-2">${t('back_to_store')}</button>
+          </div>
+        `;
+      }
+
+      return `
+        <h1 class="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider">${t('cart')}</h1>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Item Pipeline -->
+          <div class="lg:col-span-2 space-y-4">
+            ${state.cart.map(item => {
+              const p = state.products.find(prod => prod.id === item.id);
+              if (!p) return "";
+              return `
+                <div class="glass p-4 rounded-xl flex items-center justify-between gap-4 border border-white/[0.05]">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-black p-1 flex items-center justify-center shrink-0 border border-white/[0.05]">
+                      ${drawHardwareSVG(p.image).replace("w-full h-48", "w-10 h-10")}
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-bold text-white hover:text-rog-red cursor-pointer" onclick="navigate('product-${p.id}')">${p.name[state.currentLang]}</h3>
+                      <span class="text-xs font-mono text-gray-400 mt-1 block">${formatIQD(p.price)}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-4">
+                    <div class="flex items-center bg-black/60 border border-white/[0.1] rounded-xl p-0.5">
+                      <button onclick="updateQty('${p.id}', ${item.qty - 1})" class="p-1 text-gray-500 hover:text-white" id="qty-minus-btn-${p.id}">-</button>
+                      <span class="px-2 text-xs font-mono font-bold text-white">${item.qty}</span>
+                      <button onclick="updateQty('${p.id}', ${item.qty + 1})" class="p-1 text-gray-500 hover:text-white" id="qty-plus-btn-${p.id}">+</button>
+                    </div>
+                    
+                    <button onclick="removeFromCart('${p.id}')" class="p-2 text-gray-500 hover:text-rog-red" id="remove-cart-item-btn-${p.id}">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Checkout Summary -->
+          <div class="glass p-6 rounded-2xl border border-white/[0.05] h-fit">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 pb-2 border-b border-white/[0.08]">${t('order_summary')}</h3>
+            <div class="flex justify-between items-center mb-6">
+              <span class="text-xs text-gray-400 uppercase font-mono">${t('total')}</span>
+              <span class="text-xl font-mono font-bold text-[#ff003c]">${formatIQD(cartTotal())}</span>
+            </div>
+            <button onclick="requireAuth('checkout')" class="rog-btn w-full py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 uppercase tracking-widest font-bold" id="go-to-checkout-btn">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              ${t('checkout')}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- CHECKOUT PROCESS ---
+    function renderCheckout() {
+      if (!state.user) return "";
+      
+      return `
+        <h1 class="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider">${t('checkout')}</h1>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Form Parameters -->
+          <div class="glass p-6 rounded-2xl border border-white/[0.05] relative">
+            <div class="absolute -top-3 left-4 bg-rog-red text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">${t('shipping_info')}</div>
+            <h3 class="text-sm font-bold text-white mb-6 mt-2">${t('shipping_info')}</h3>
+            
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">${t('fullname')}</label>
+                <input type="text" id="checkout-fullname" value="${state.user.name}" class="w-full glass py-2.5 px-4 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red" />
+              </div>
+
+              <div>
+                <label class="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">${t('phone')}</label>
+                <input type="text" id="checkout-phone" placeholder="07XXXXXXXXX" class="w-full glass py-2.5 px-4 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red" />
+              </div>
+
+              <div>
+                <label class="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">${t('address')}</label>
+                <textarea id="checkout-address" rows="3" placeholder="المحافظة / المدينة / نقطة دالة معروفة" class="w-full glass p-4 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkout Cart Review -->
+          <div class="glass p-6 rounded-2xl border border-white/[0.05] h-fit flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 pb-2 border-b border-white/[0.08]">${t('order_summary')}</h3>
+              
+              <div class="max-h-48 overflow-y-auto mb-6 pr-2 space-y-3">
+                ${state.cart.map(item => {
+                  const p = state.products.find(prod => prod.id === item.id);
+                  if (!p) return "";
+                  return `
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="text-gray-300 line-clamp-1 flex-1">${p.name[state.currentLang]} x${item.qty}</span>
+                      <span class="font-mono text-gray-400 font-bold ml-2 shrink-0">${formatIQD(p.price * item.qty)}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+
+              <div class="border-t border-white/[0.08] pt-4 flex justify-between items-center mb-6">
+                <span class="text-xs text-gray-400 uppercase font-mono">${t('total')}</span>
+                <span class="text-lg font-mono font-bold text-rog-red">${formatIQD(cartTotal())}</span>
+              </div>
+            </div>
+
+            <button onclick="confirmOrderAction()" class="rog-btn w-full py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 uppercase tracking-widest font-bold" id="confirm-order-action-btn">
+              <i data-lucide="package-check" class="w-5 h-5"></i>
+              ${t('confirm_order')}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function confirmOrderAction() {
+      const nameVal = document.getElementById("checkout-fullname").value;
+      const phoneVal = document.getElementById("checkout-phone").value;
+      const addressVal = document.getElementById("checkout-address").value;
+
+      if (!nameVal.trim() || !phoneVal.trim() || !addressVal.trim()) {
+        showToast(t("fields_required"));
+        return;
+      }
+
+      const orderObj = {
+        id: "ORD-" + Date.now(),
+        items: [...state.cart],
+        total: cartTotal(),
+        date: new Date().toLocaleString(state.currentLang === "ar" ? "ar-IQ" : "en-US"),
+        shipping: {
+          name: nameVal,
+          phone: phoneVal,
+          address: addressVal
+        },
+        status: "New"
+      };
+
+      if (!state.user.orders) state.user.orders = [];
+      state.user.orders.push(orderObj);
+      saveUser();
+
+      // Clear Cart
+      state.cart = [];
+      saveCart();
+
+      showToast(t("thanks_order"));
+      navigate("invoice-" + orderObj.id);
+    }
+
+    // --- OFFICIAL DIGITAL INVOICE VIEW ---
+    function renderInvoice(id) {
+      if (!state.user || !state.user.orders) return `<div class="p-8 text-center text-gray-500">Unauthenticated or database mismatch.</div>`;
+      const order = state.user.orders.find(o => o.id === id);
+      if (!order) return `<div class="p-8 text-center text-gray-500">Invoice not found.</div>`;
+
+      return `
+        <div class="max-w-xl mx-auto glass p-8 rounded-3xl border border-white/[0.08]" id="invoice-bill-container">
+          <div class="text-center mb-6">
+            <span class="text-xs uppercase tracking-widest font-mono text-rog-cyan">Republic Rebellion Network</span>
+            <h1 class="text-xl font-extrabold text-white mt-1 italic tracking-tight">${t('invoice')}</h1>
+            <div class="mt-2 text-xs text-gray-500 font-mono">BILL NO: ${order.id}</div>
+          </div>
+
+          <div class="border-t border-white/[0.08] py-4 space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">${t('order_date')}:</span>
+              <span class="text-white font-mono font-bold">${order.date}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">${t('order_status')}:</span>
+              <span class="text-rog-red uppercase font-semibold tracking-wider">${order.status}</span>
+            </div>
+          </div>
+
+          <div class="border-t border-white/[0.08] py-4 space-y-3">
+            <h3 class="text-xs uppercase text-gray-400 font-mono tracking-wider">${t('order_summary')}</h3>
+            ${order.items.map(item => {
+              const p = state.products.find(prod => prod.id === item.id);
+              if (!p) return "";
+              return `
+                <div class="flex justify-between text-xs items-center">
+                  <span class="text-gray-300">${p.name[state.currentLang]} x${item.qty}</span>
+                  <span class="font-mono text-white font-semibold">${formatIQD(p.price * item.qty)}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="border-t border-white/[0.08] py-4 text-xs space-y-2">
+            <h3 class="uppercase text-gray-400 font-mono tracking-wider mb-2">${t('shipping_info')}</h3>
+            <div class="grid grid-cols-3">
+              <span class="text-gray-500">${t('fullname')}:</span>
+              <span class="col-span-2 text-white font-semibold">${order.shipping.name}</span>
+            </div>
+            <div class="grid grid-cols-3">
+              <span class="text-gray-500">${t('phone')}:</span>
+              <span class="col-span-2 text-white font-semibold">${order.shipping.phone}</span>
+            </div>
+            <div class="grid grid-cols-3">
+              <span class="text-gray-500">${t('address')}:</span>
+              <span class="col-span-2 text-white leading-relaxed font-semibold">${order.shipping.address}</span>
+            </div>
+          </div>
+
+          <div class="border-t border-white/[0.08] pt-4 flex justify-between items-center mb-6">
+            <span class="text-sm font-bold uppercase text-rog-cyan font-mono">${t('total')}</span>
+            <span class="text-xl font-mono font-extrabold text-[#ff003c]">${formatIQD(order.total)}</span>
+          </div>
+
+          <button onclick="navigate('orders')" class="rog-btn w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider" id="invoice-view-all-orders">
+            ${t('orders')}
+          </button>
+        </div>
+      `;
+    }
+
+    // --- HISTORICAL ORDERS LOG ---
+    function renderOrders() {
+      if (!state.user || !state.user.orders || state.user.orders.length === 0) {
+        return `
+          <div class="p-12 text-center text-gray-500 max-w-md mx-auto flex flex-col items-center">
+            <i data-lucide="package-open" class="w-16 h-16 text-rog-red/20 mb-4"></i>
+            <h2 class="text-lg font-bold text-white mb-2">${t('empty_orders')}</h2>
+            <button onclick="navigate('store')" class="rog-btn px-6 py-2.5 rounded-xl text-xs font-bold uppercase mt-2">${t('back_to_store')}</button>
+          </div>
+        `;
+      }
+
+      return `
+        <h1 class="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider">${t('orders')}</h1>
+        <div class="space-y-4">
+          ${state.user.orders.map(o => `
+            <div class="glass p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-white/[0.05]">
+              <div>
+                <div class="flex items-center gap-3 mb-1.5">
+                  <span class="font-bold text-sm text-white">${o.id}</span>
+                  <span class="text-[10px] font-mono bg-white/[0.05] border border-white/10 text-gray-400 px-2 py-0.5 rounded-full">${o.date}</span>
+                </div>
+                <div class="text-xs text-gray-400">
+                  Total Items: ${o.items.reduce((sum, i) => sum + i.qty, 0)} • Sum: <span class="text-rog-red font-mono font-bold">${formatIQD(o.total)}</span>
+                </div>
+              </div>
+
+              <!-- Live Status badge -->
+              <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                <span class="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider ${o.status === 'Completed' ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-rog-red/10 text-rog-red border border-rog-red/30'}">
+                  ${o.status}
+                </span>
+                <button onclick="navigate('invoice-${o.id}')" class="px-4 py-2 border border-white/[0.1] hover:border-rog-cyan/50 hover:bg-rog-cyan/5 text-xs text-gray-300 font-bold rounded-xl transition-all" id="orders-view-invoice-${o.id}">
+                  ${t('view_invoice')}
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // --- WISHLIST REDIRECT PAGE ---
+    function renderWishlist() {
+      if (!state.user || !state.user.wishlist || state.user.wishlist.length === 0) {
+        return `
+          <div class="p-12 text-center text-gray-500 max-w-md mx-auto flex flex-col items-center">
+            <i data-lucide="heart-off" class="w-16 h-16 text-rog-red/25 mb-4"></i>
+            <h2 class="text-lg font-bold text-white mb-2">${t('empty_wishlist')}</h2>
+            <button onclick="navigate('store')" class="rog-btn px-6 py-2.5 rounded-xl text-xs font-bold uppercase mt-2">${t('back_to_store')}</button>
+          </div>
+        `;
+      }
+
+      const products = state.products.filter(p => state.user.wishlist.includes(p.id));
+
+      return `
+        <h1 class="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider">${t('wishlist')}</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          ${products.map(p => `
+            <div class="glass rounded-xl overflow-hidden border border-white/[0.05] p-4 flex flex-col justify-between">
+              <div class="cursor-pointer" onclick="navigate('product-${p.id}')">
+                ${drawHardwareSVG(p.image).replace("h-48", "h-32")}
+                <h3 class="text-xs font-bold text-white mt-3 line-clamp-1">${p.name[state.currentLang]}</h3>
+                <span class="text-xs font-mono font-bold text-[#ff003c] block mt-1">${formatIQD(p.price)}</span>
+              </div>
+              <button onclick="toggleWishlist('${p.id}')" class="mt-4 text-[10px] font-bold text-gray-400 hover:text-rog-red uppercase" id="wishlist-remove-${p.id}">Erase</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // --- BENCHMARKING SIDE-BY-SIDE COMPARE TOOL ---
+    function renderCompare() {
+      if (!state.user || !state.user.compare || state.user.compare.length === 0) {
+        return `
+          <div class="p-12 text-center text-gray-500 max-w-md mx-auto flex flex-col items-center">
+            <i data-lucide="git-compare" class="w-16 h-16 text-rog-cyan/25 mb-4 animate-pulse"></i>
+            <h2 class="text-lg font-bold text-white mb-2">${t('empty_compare')}</h2>
+            <button onclick="navigate('store')" class="rog-btn px-6 py-2.5 rounded-xl text-xs font-bold uppercase mt-2">${t('back_to_store')}</button>
+          </div>
+        `;
+      }
+
+      const items = state.products.filter(p => state.user.compare.includes(p.id));
+
+      return `
+        <h1 class="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider">${t('compare')}</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          ${items.map(p => `
+            <div class="glass p-6 rounded-2xl border border-white/[0.05] flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center mb-4">
+                  <span class="text-xs font-mono text-rog-cyan bg-rog-cyan/10 px-3 py-1 rounded-full uppercase">${p.brand}</span>
+                  <button onclick="toggleCompare('${p.id}')" class="text-gray-500 hover:text-rog-red" id="compare-remove-${p.id}">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                ${drawHardwareSVG(p.image).replace("h-48", "h-36")}
+                <h3 class="text-md font-bold text-white mt-4">${p.name[state.currentLang]}</h3>
+                <p class="text-xs text-gray-400 leading-relaxed mt-2 pb-4 border-b border-white/[0.08]">${p.desc[state.currentLang]}</p>
+                
+                <div class="py-4 space-y-2 text-xs">
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">${t('price')}:</span>
+                    <span class="text-[#ff003c] font-mono font-bold">${formatIQD(p.price)}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">${t('category')}:</span>
+                    <span class="text-white uppercase font-semibold font-mono">${p.category}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="addToCart('${p.id}')" class="rog-btn w-full py-2 rounded-xl text-xs font-bold uppercase mt-4" id="compare-add-cart-${p.id}">
+                ${t('add_to_cart')}
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // --- STATIC CONTENT PAGES ---
+    function renderAbout() {
+      return `
+        <div class="max-w-xl mx-auto glass p-8 rounded-3xl border border-white/[0.08]">
+          <h1 class="text-xl font-extrabold text-white mb-4 italic tracking-tight">${t('about')}</h1>
+          <p class="text-sm text-gray-400 leading-relaxed mb-6">${t('about_desc')}</p>
+          <div class="bg-black/40 rounded-xl p-4 border border-white/[0.05] text-xs space-y-2">
+            <div>📍 MAIN HUB: Al-Sina'a Computer Center, Baghdad, Iraq</div>
+            <div>📧 REBELS CONTACT: sajadmaheralkhfaji@gmail.com</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderContact() {
+      return `
+        <div class="max-w-xl mx-auto glass p-8 rounded-3xl border border-white/[0.08]" id="contact-form-card">
+          <h1 class="text-xl font-extrabold text-white mb-6 italic tracking-tight">${t('contact')}</h1>
+          
+          <div class="space-y-4 mb-6">
+            <div>
+              <label class="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">${t('contact_name')}</label>
+              <input type="text" id="contact-name" class="w-full glass py-2 px-3 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-rog-red" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">${t('contact_email')}</label>
+              <input type="email" id="contact-email" class="w-full glass py-2 px-3 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-rog-red" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">${t('contact_message')}</label>
+              <textarea id="contact-message" rows="4" class="w-full glass p-3 rounded-lg text-xs text-white placeholder-gray-500 focus:outline-none focus:border-rog-red"></textarea>
+            </div>
+          </div>
+
+          <button onclick="submitContactAction()" class="rog-btn w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider" id="contact-form-submit">
+            ${t('contact_submit')}
+          </button>
+        </div>
+      `;
+    }
+
+    function submitContactAction() {
+      const name = document.getElementById("contact-name").value;
+      const email = document.getElementById("contact-email").value;
+      const desc = document.getElementById("contact-message").value;
+
+      if (!name.trim() || !email.trim() || !desc.trim()) {
+        showToast(t("fields_required"));
+        return;
+      }
+      showToast(t("msg_sent"));
+      navigate("store");
+    }
+
+    function renderSupport() {
+      if (!state.user) return "";
+      return `
+        <div class="max-w-xl mx-auto glass p-8 rounded-3xl border border-white/[0.08]">
+          <h1 class="text-xl font-extrabold text-white mb-6 italic tracking-tight">${t('support')}</h1>
+          
+          <div class="space-y-4 mb-6">
+            <div>
+              <label class="block text-xs uppercase text-gray-400 font-mono mb-2">${t('support_title')}</label>
+              <input type="text" id="support-title" class="w-full glass py-2 px-3 rounded-lg text-xs text-white focus:outline-none focus:border-rog-red" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase text-gray-400 font-mono mb-2">${t('support_desc')}</label>
+              <textarea id="support-desc" rows="4" class="w-full glass p-3 rounded-lg text-xs text-white focus:outline-none focus:border-rog-red"></textarea>
+            </div>
+          </div>
+
+          <button onclick="submitSupportAction()" class="rog-btn w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider" id="support-form-submit">
+            ${t('support_submit')}
+          </button>
+        </div>
+      `;
+    }
+
+    function submitSupportAction() {
+      const title = document.getElementById("support-title").value;
+      const desc = document.getElementById("support-desc").value;
+
+      if (!title.trim() || !desc.trim()) {
+        showToast(t("fields_required"));
+        return;
+      }
+      showToast(t("ticket_submitted") + ": #" + Math.floor(Math.random() * 90000 + 10000));
+      navigate("store");
+    }
+
+    function renderBlog() {
+      return `
+        <h1 class="text-2xl font-extrabold text-white mb-6 uppercase tracking-wider">${t('blog')}</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          ${BLOG_POSTS.map(post => `
+            <div class="glass p-6 rounded-2xl border border-white/[0.05] relative overflow-hidden group">
+              <div class="absolute -top-3 left-4 bg-rog-red text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">${post.date}</div>
+              <h2 class="text-md font-bold text-white mt-4 mb-3 group-hover:text-rog-red transition-all duration-300">${post.title}</h2>
+              <p class="text-xs text-gray-400 leading-relaxed mb-4">${post.content}</p>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // --- AUTH LOGIN / REGISTER ---
+    function renderLogin() {
+      return `
+        <div class="max-w-md mx-auto glass p-8 rounded-3xl border border-white/[0.08]" id="auth-login-card">
+          <div class="text-center mb-6">
+            <h1 class="text-xl font-extrabold text-white italic tracking-tight">${t('welcome_back')}</h1>
+          </div>
+
+          <div class="space-y-4 mb-6">
+            <div>
+              <label class="block text-xs uppercase text-gray-400 font-mono mb-2">${t('email')}</label>
+              <input type="email" id="login-email" class="w-full glass py-2.5 px-3 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase text-gray-400 font-mono mb-2">${t('password')}</label>
+              <input type="password" id="login-password" class="w-full glass py-2.5 px-3 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red" />
+            </div>
+          </div>
+
+          <button onclick="loginAction()" class="rog-btn w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider mb-4" id="login-submit-btn">
+            ${t('login')}
+          </button>
+          
+          <div class="text-center">
+            <span class="text-xs text-gray-500">${t('dont_have_account')}</span>
+            <a onclick="navigate('register')" class="text-xs text-rog-red font-bold underline ml-1 cursor-pointer">${t('register')}</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function loginAction() {
+      const email = document.getElementById("login-email").value;
+      const pass = document.getElementById("login-password").value;
+
+      if (!email.trim() || !pass.trim()) {
+        showToast(t("fields_required"));
+        return;
+      }
+
+      // Check users database in storage or create automatic profile for testability
+      state.user = {
+        name: email.split("@")[0].toUpperCase(),
+        email: email,
+        password: pass,
+        orders: [],
+        wishlist: [],
+        compare: []
+      };
+      saveUser();
+      showToast(t("login_success"));
+      navigate("store");
+    }
+
+    function renderRegister() {
+      return `
+        <div class="max-w-md mx-auto glass p-8 rounded-3xl border border-white/[0.08]" id="auth-register-card">
+          <div class="text-center mb-6">
+            <h1 class="text-xl font-extrabold text-white italic tracking-tight">${t('join_rebellion')}</h1>
+          </div>
+
+          <div class="space-y-4 mb-6">
+            <div>
+              <label class="block text-xs uppercase text-gray-400 font-mono mb-2">${t('fullname')}</label>
+              <input type="text" id="register-fullname" class="w-full glass py-2.5 px-3 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase text-gray-400 font-mono mb-2">${t('email')}</label>
+              <input type="email" id="register-email" class="w-full glass py-2.5 px-3 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase text-gray-400 font-mono mb-2">${t('password')}</label>
+              <input type="password" id="register-password" class="w-full glass py-2.5 px-3 rounded-xl text-sm text-white focus:outline-none focus:border-rog-red" />
+            </div>
+          </div>
+
+          <button onclick="registerAction()" class="rog-btn w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider mb-4" id="register-submit-btn">
+            ${t('register')}
+          </button>
+          
+          <div class="text-center">
+            <span class="text-xs text-gray-500">${t('have_account')}</span>
+            <a onclick="navigate('login')" class="text-xs text-rog-red font-bold underline ml-1 cursor-pointer">${t('login')}</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function registerAction() {
+      const name = document.getElementById("register-fullname").value;
+      const email = document.getElementById("register-email").value;
+      const pass = document.getElementById("register-password").value;
+
+      if (!name.trim() || !email.trim() || !pass.trim()) {
+        showToast(t("fields_required"));
+        return;
+      }
+
+      state.user = {
+        name: name,
+        email: email,
+        password: pass,
+        orders: [],
+        wishlist: [],
+        compare: []
+      };
+      saveUser();
+      showToast(t("register_success"));
+      navigate("store");
+    }
+
+    function logout() {
+      state.user = null;
+      localStorage.removeItem("rog_user_pro");
+      // Optional: Clear active cart
+      showToast(t("logout_success"));
+      navigate("store");
+    }
+
+    // --- OPERATIONAL ADMIN MODULES (Secured 002006) ---
+    function triggerAdmin() {
+      if (state.adminLogged) {
+        navigate("admin");
+      } else {
+        const passPrompt = prompt("Enter Administration Decryption Key:");
+        if (passPrompt === "002006") {
+          state.adminLogged = true;
+          saveAdminState();
+          showToast(t("admin_login_success"));
+          navigate("admin");
+        } else {
+          showToast(t("unauthorized_admin"));
+        }
+      }
+    }
+
+    function setAdminSection(section) {
+      state.adminSection = section;
+      render();
+    }
+
+    function renderAdmin() {
+      if (!state.adminLogged) return "";
+
+      const sidebarActive = "p-2.5 bg-rog-red text-white rounded-lg text-xs font-bold text-center";
+      const sidebarIdle = "p-2.5 bg-white/[0.02] border border-white/[0.05] text-gray-400 hover:text-white rounded-lg text-xs font-bold text-center";
+
+      return `
+        <div class="flex flex-col lg:flex-row gap-6">
+          <!-- Left Console Admin tabs -->
+          <div class="w-full lg:w-56 glass rounded-2xl p-4 border border-white/[0.08] flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible shrink-0">
+            <button onclick="setAdminSection('dashboard')" class="${state.adminSection === 'dashboard' ? sidebarActive : sidebarIdle}">
+              ${t('admin_dashboard')}
+            </button>
+            <button onclick="setAdminSection('products')" class="${state.adminSection === 'products' ? sidebarActive : sidebarIdle}">
+              ${t('admin_products')}
+            </button>
+            <button onclick="setAdminSection('orders')" class="${state.adminSection === 'orders' ? sidebarActive : sidebarIdle}">
+              ${t('admin_orders')}
+            </button>
+            <button onclick="setAdminSection('users')" class="${state.adminSection === 'users' ? sidebarActive : sidebarIdle}">
+              ${t('admin_users')}
+            </button>
+            <button onclick="setAdminSection('settings')" class="${state.adminSection === 'settings' ? sidebarActive : sidebarIdle}">
+               System Language
+            </button>
+          </div>
+
+          <!-- Right Content Dynamic Screen -->
+          <div class="flex-grow glass rounded-2xl p-6 border border-white/[0.08]" id="admin-main-pane">
+            ${renderAdminContent()}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAdminContent() {
+      if (state.adminSection === "dashboard") {
+        return `
+          <h2 class="text-md font-bold text-white mb-6 uppercase tracking-wider">${t('admin_dashboard')}</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="p-4 bg-black/40 border border-[#7b2cbf]/30 rounded-xl relative overflow-hidden">
+              <span class="text-[9px] uppercase tracking-wider text-gray-500 font-mono">FINANCES</span>
+              <div class="text-lg font-mono font-extrabold text-[#7b2cbf] mt-2">
+                ${formatIQD(state.user && state.user.orders ? state.user.orders.reduce((sum, o) => sum + o.total, 0) : 0)}
+              </div>
+            </div>
+
+            <div class="p-4 bg-black/40 border border-rog-red/30 rounded-xl relative overflow-hidden">
+              <span class="text-[9px] uppercase tracking-wider text-gray-500 font-mono">PRODUCTS COUNT</span>
+              <div class="text-lg font-mono font-extrabold text-rog-red mt-2">${state.products.length}</div>
+            </div>
+
+            <div class="p-4 bg-black/40 border border-rog-cyan/30 rounded-xl relative overflow-hidden">
+              <span class="text-[9px] uppercase tracking-wider text-gray-500 font-mono">ACTIVE USERS</span>
+              <div class="text-lg font-mono font-extrabold text-rog-cyan mt-2">1 (LOCAL SEED)</div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.adminSection === "products") {
+        return `
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-md font-bold text-white uppercase tracking-wider">${t('admin_products')}</h2>
+            <button onclick="adminAddProductprompt()" class="rog-btn px-4 py-2 rounded-xl text-xs font-bold font-mono">
+              + ${t('add_product').toUpperCase()}
+            </button>
+          </div>
+
+          <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+            ${state.products.map(p => `
+              <div class="p-3 bg-black/40 rounded-xl border border-white/[0.05] flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded bg-zinc-800 p-1 flex items-center justify-center shrink-0">
+                    ${drawHardwareSVG(p.image).replace("w-full h-48", "w-8 h-8")}
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white">${p.name[state.currentLang]}</h4>
+                    <span class="text-[10px] font-mono text-rog-red">${formatIQD(p.price)}</span>
+                  </div>
+                </div>
+
+                <div class="flex gap-2">
+                  <button onclick="adminEditProductprompt('${p.id}')" class="px-2.5 py-1 bg-white/5 border border-white/10 text-[10px] rounded hover:border-rog-cyan transition-all font-mono">
+                    ${t('edit_product')}
+                  </button>
+                  <button onclick="adminDeleteProductAction('${p.id}')" class="px-2.5 py-1 bg-rog-red/10 border border-rog-red/30 text-[10px] text-rog-red rounded hover:bg-rog-red/20 transition-all font-mono">
+                    ${t('delete_product')}
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      if (state.adminSection === "orders") {
+        const orders = state.user && state.user.orders ? state.user.orders : [];
+        return `
+          <h2 class="text-md font-bold text-white mb-6 uppercase tracking-wider">${t('admin_orders')}</h2>
+          ${orders.length === 0 ? `
+            <div class="p-8 text-center text-gray-500 border border-dashed border-white/[0.08] rounded-2xl">No orders triggered.</div>
+          ` : `
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+              ${orders.map(o => `
+                <div class="p-4 bg-black/45 rounded-xl border border-white/[0.05] flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <div class="text-xs font-bold text-white">${o.id}</div>
+                    <div class="text-[10px] text-gray-400 mt-1">${o.shipping.name} • ${o.shipping.phone}</div>
+                    <span class="text-[10px] text-rog-red font-mono font-bold block mt-1">${formatIQD(o.total)}</span>
+                  </div>
+
+                  <div class="flex gap-2 items-center">
+                    <span class="text-[10px] font-bold text-rog-cyan bg-rog-cyan/5 px-2.5 py-1 rounded border border-rog-cyan/30">${o.status}</span>
+                    <button onclick="adminChangeOrderStatusprompt('${o.id}')" class="px-3 py-1.5 bg-rog-red hover:bg-red-600 rounded text-[10px] font-bold text-white uppercase" id="admin-status-change-${o.id}">
+                      ${t('change_status')}
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        `;
+      }
+
+      if (state.adminSection === "users") {
+        return `
+          <h2 class="text-md font-bold text-white mb-6 uppercase tracking-wider">${t('admin_users')}</h2>
+          ${state.user ? `
+            <div class="p-4 bg-black/40 rounded-xl border border-white/[0.05] max-w-sm">
+              <div class="font-bold text-sm text-white">${state.user.name}</div>
+              <div class="text-xs font-mono text-gray-400 mt-1">${state.user.email}</div>
+              <div class="mt-4 text-[10px] text-rog-cyan font-mono">ROLE: ROOT ADMINISTRATOR SEED</div>
+            </div>
+          ` : `
+            <div class="p-4 text-center text-xs text-gray-500">Unauthenticated local profile.</div>
+          `}
+        `;
+      }
+
+      if (state.adminSection === "settings") {
+        return `
+          <h2 class="text-md font-bold text-white mb-6 uppercase tracking-wider">${t('admin_settings')}</h2>
+          <div class="p-4 bg-black/40 border border-white/[0.05] rounded-xl text-center space-y-4">
+            <p class="text-xs text-gray-400">Configure global app translation parameters dynamically:</p>
+            <div class="flex justify-center gap-3">
+              <button onclick="setLang('ar')" class="rog-btn px-4 py-2 rounded text-xs">العربية (Arabic)</button>
+              <button onclick="setLang('en')" class="rog-btn px-4 py-2 rounded text-xs">English (US)</button>
+              <button onclick="setLang('ku')" class="rog-btn px-4 py-2 rounded text-xs">کوردی (Kurdish)</button>
+            </div>
+          </div>
+        `;
+      }
+      return "";
+    }
+
+    // --- PROMPT-BASED CLIENT ADMINISTRATIVE CREATIVE UTILITIES ---
+    function adminAddProductprompt() {
+      const nameAr = prompt("Enter product name in Arabic:");
+      const nameEn = prompt("Enter product name in English:");
+      const priceVal = prompt("Enter product price (IQD numeric value only):");
+      
+      if (!nameAr || !nameEn || !priceVal) {
+        showToast(t("fields_required"));
+        return;
+      }
+
+      const parsedPrice = parseInt(priceVal);
+      if (isNaN(parsedPrice)) {
+        showToast("Price must be a valid number!");
+        return;
+      }
+
+      const pObj = {
+        id: "p" + Date.now(),
+        name: { ar: nameAr, en: nameEn, ku: nameAr },
+        desc: { ar: "العنصر المضاف حديثاً من وحدة الإدارة.", en: "Newly custom cataloged item.", ku: "کارت نوێ زیادکراو" },
+        price: parsedPrice,
+        category: "other",
+        brand: "ROG HUB",
+        image: "cooler",
+        reviews: []
+      };
+
+      state.products.push(pObj);
+      saveProducts();
+      showToast("Product configured successfully!");
+      render();
+    }
+
+    function adminEditProductprompt(id) {
+      const prod = state.products.find(item => item.id === id);
+      if (!prod) return;
+
+      const nameAr = prompt("Edit product name (Arabic):", prod.name.ar);
+      const priceVal = prompt("Edit price (IQD numeric value):", prod.price);
+
+      if (!nameAr || !priceVal) {
+        showToast(t("fields_required"));
+        return;
+      }
+
+      const parsedPrice = parseInt(priceVal);
+      if (isNaN(parsedPrice)) return;
+
+      prod.name.ar = nameAr;
+      prod.name.en = nameAr;
+      prod.name.ku = nameAr;
+      prod.price = parsedPrice;
+
+      saveProducts();
+      showToast("Product updated successfully!");
+      render();
+    }
+
+    function adminDeleteProductAction(id) {
+      if (confirm("Are you sure you want to expel this product line?")) {
+        state.products = state.products.filter(item => item.id !== id);
+        saveProducts();
+        showToast("Product line expelled.");
+        render();
+      }
+    }
+
+    function adminChangeOrderStatusprompt(orderId) {
+      if (!state.user || !state.user.orders) return;
+      const order = state.user.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const newStatus = prompt(t("enter_new_status"), order.status);
+      if (newStatus) {
+        order.status = newStatus;
+        saveUser();
+        showToast("Status dynamically modified successfully!");
+        render();
+      }
+    }
+
+    // --- APP STARTUP & LIFE CYCLES ---
+    window.onload = () => {
+      // 1. Terminate loader screen with dynamic transition
+      const loader = document.getElementById("loading");
+      if (loader) {
+        loader.classList.add("opacity-0");
+        setTimeout(() => loader.remove(), 500);
+      }
+
+      // 2. Load configurations and route
+      updateRtlDirection();
+      render();
+    };
+  </script>
+</body>
+</html>

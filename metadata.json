@@ -1,0 +1,6 @@
+{
+  "name": "ROG Store Pro",
+  "description": "A premium gaming PC components eCommerce SPA with multilingual support (Arabic, English, Kurdish) and Iraqi Dinar currency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
